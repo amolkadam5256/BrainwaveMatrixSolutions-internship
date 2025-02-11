@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Day Planner</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-900 text-white p-5">
+    <div class="max-w-xl mx-auto bg-gray-800 p-6 rounded-lg shadow-md">
+        <h2 class="text-2xl font-bold mb-4 text-center">📅 Advanced Day Planner</h2>
+
+        <button onclick="toggleTheme()" class="mb-4 p-2 bg-gray-600 rounded">🌙 Toggle Theme</button>
+
+        <div class="mb-4">
+            <input id="task" type="text" placeholder="Add a new task..."
+                class="w-full p-2 border rounded bg-gray-700 text-white">
+            <input id="date" type="datetime-local" class="w-full p-2 border rounded mt-2 bg-gray-700 text-white">
+            <select id="category" class="w-full p-2 border rounded mt-2 bg-gray-700 text-white">
+                <option value="general">📌 General</option>
+                <option value="work">💼 Work</option>
+                <option value="trip">✈ Trip</option>
+                <option value="meeting">📅 Meeting</option>
+            </select>
+            <select id="priority" class="w-full p-2 border rounded mt-2 bg-gray-700 text-white">
+                <option value="low">🟢 Low</option>
+                <option value="medium">🟡 Medium</option>
+                <option value="high">🔴 High</option>
+            </select>
+            <button onclick="addTask()" class="w-full bg-blue-500 text-white p-2 rounded mt-2 hover:bg-blue-600">➕ Add
+                Task</button>
+        </div>
+
+        <input id="search" type="text" placeholder="Search tasks..."
+            class="w-full p-2 border rounded mt-2 bg-gray-700 text-white" oninput="filterTasks()">
+
+        <div class="w-full bg-gray-600 rounded mt-2">
+            <div id="progressBar" class="bg-green-500 h-2 rounded" style="width: 0%;"></div>
+        </div>
+
+        <div class="flex gap-2 mt-3">
+            <button onclick="filterByCategory('all')" class="px-3 py-1 bg-gray-700 rounded">📋 All</button>
+            <button onclick="filterByCategory('work')" class="px-3 py-1 bg-gray-700 rounded">💼 Work</button>
+            <button onclick="filterByCategory('meeting')" class="px-3 py-1 bg-gray-700 rounded">📅 Meeting</button>
+            <button onclick="filterByCategory('trip')" class="px-3 py-1 bg-gray-700 rounded">✈ Trip</button>
+        </div>
+
+        <ul id="taskList" class="space-y-2 mt-4"></ul>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            document.getElementById("date").value = new Date().toISOString().slice(0, 16);
+            loadTasks();
+            setInterval(checkReminders, 60000);
+        });
+
+        function addTask() {
+            let taskInput = document.getElementById("task");
+            let dateInput = document.getElementById("date");
+            let categoryInput = document.getElementById("category");
+            let priorityInput = document.getElementById("priority");
+            if (taskInput.value.trim() === "" || dateInput.value === "") return;
+
+            let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+            tasks.push({ id: Date.now(), text: taskInput.value, date: new Date(dateInput.value).toISOString(), category: categoryInput.value, priority: priorityInput.value, completed: false });
+            localStorage.setItem("tasks", JSON.stringify(tasks));
+            taskInput.value = "";
+            dateInput.value = new Date().toISOString().slice(0, 16);
+            loadTasks();
+        }
+
+        function loadTasks(filterCategory = "all", searchQuery = "") {
+            let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+            let taskList = document.getElementById("taskList");
+            taskList.innerHTML = "";
+
+            tasks = tasks.filter(task =>
+                (filterCategory === "all" || task.category === filterCategory) &&
+                (searchQuery === "" || task.text.toLowerCase().includes(searchQuery.toLowerCase()))
+            );
+
+            tasks.sort((a, b) => (a.priority === "high" ? -1 : a.priority === "low" ? 1 : 0));
+
+            tasks.forEach(task => {
+                let taskItem = document.createElement("li");
+                taskItem.className = "flex justify-between items-center p-3 bg-gray-700 rounded draggable";
+                taskItem.draggable = true;
+                taskItem.innerHTML = `
+                    <span class="${task.completed ? 'line-through text-gray-400' : ''}">${task.text} - <small>${new Date(task.date).toLocaleString()}</small> (${task.category}, ${task.priority})</span>
+                    <div>
+                        <button onclick="toggleTask(${task.id})" class="mr-2 text-green-400">✔</button>
+                        <button onclick="deleteTask(${task.id})" class="text-red-400">🗑</button>
+                    </div>
+                `;
+                taskList.appendChild(taskItem);
+            });
+            updateProgress();
+        }
+
+        function filterTasks() {
+            let searchQuery = document.getElementById("search").value;
+            loadTasks("all", searchQuery);
+        }
+
+        function filterByCategory(category) {
+            loadTasks(category);
+        }
+
+        function toggleTask(id) {
+            let tasks = JSON.parse(localStorage.getItem("tasks"));
+            tasks = tasks.map(task => task.id === id ? { ...task, completed: !task.completed } : task);
+            localStorage.setItem("tasks", JSON.stringify(tasks));
+            loadTasks();
+        }
+
+        function deleteTask(id) {
+            let tasks = JSON.parse(localStorage.getItem("tasks"));
+            tasks = tasks.filter(task => task.id !== id);
+            localStorage.setItem("tasks", JSON.stringify(tasks));
+            loadTasks();
+        }
+
+        function updateProgress() {
+            let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+            let completedTasks = tasks.filter(task => task.completed).length;
+            let progress = tasks.length ? (completedTasks / tasks.length) * 100 : 0;
+            document.getElementById("progressBar").style.width = `${progress}%`;
+        }
+
+        function toggleTheme() {
+            document.body.classList.toggle("bg-gray-900");
+        }
+    </script>
+</body>
+
+</html>
