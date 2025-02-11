@@ -15,8 +15,7 @@
         <button onclick="toggleTheme()" class="mb-4 p-2 bg-gray-600 rounded">🌙 Toggle Theme</button>
 
         <div class="mb-4">
-            <input id="task" type="text" placeholder="Add a new task..."
-                class="w-full p-2 border rounded bg-gray-700 text-white">
+            <input id="task" type="text" placeholder="Add a new task..." class="w-full p-2 border rounded bg-gray-700 text-white">
             <input id="date" type="datetime-local" class="w-full p-2 border rounded mt-2 bg-gray-700 text-white">
             <select id="category" class="w-full p-2 border rounded mt-2 bg-gray-700 text-white">
                 <option value="general">📌 General</option>
@@ -29,12 +28,10 @@
                 <option value="medium">🟡 Medium</option>
                 <option value="high">🔴 High</option>
             </select>
-            <button onclick="addTask()" class="w-full bg-blue-500 text-white p-2 rounded mt-2 hover:bg-blue-600">➕ Add
-                Task</button>
+            <button onclick="addTask()" class="w-full bg-blue-500 text-white p-2 rounded mt-2 hover:bg-blue-600">➕ Add Task</button>
         </div>
 
-        <input id="search" type="text" placeholder="Search tasks..."
-            class="w-full p-2 border rounded mt-2 bg-gray-700 text-white" oninput="filterTasks()">
+        <input id="search" type="text" placeholder="Search tasks..." class="w-full p-2 border rounded mt-2 bg-gray-700 text-white" oninput="filterTasks()">
 
         <div class="w-full bg-gray-600 rounded mt-2">
             <div id="progressBar" class="bg-green-500 h-2 rounded" style="width: 0%;"></div>
@@ -65,7 +62,15 @@
             if (taskInput.value.trim() === "" || dateInput.value === "") return;
 
             let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
-            tasks.push({ id: Date.now(), text: taskInput.value, date: new Date(dateInput.value).toISOString(), category: categoryInput.value, priority: priorityInput.value, completed: false });
+            tasks.push({
+                id: Date.now(),
+                text: taskInput.value,
+                date: new Date(dateInput.value).toISOString(),
+                category: categoryInput.value,
+                priority: priorityInput.value,
+                completed: false
+            });
+
             localStorage.setItem("tasks", JSON.stringify(tasks));
             taskInput.value = "";
             dateInput.value = new Date().toISOString().slice(0, 16);
@@ -82,14 +87,18 @@
                 (searchQuery === "" || task.text.toLowerCase().includes(searchQuery.toLowerCase()))
             );
 
-            tasks.sort((a, b) => (a.priority === "high" ? -1 : a.priority === "low" ? 1 : 0));
+            // Sort tasks by Date & Priority
+            tasks.sort((a, b) => new Date(a.date) - new Date(b.date) || (a.priority === "high" ? -1 : a.priority === "low" ? 1 : 0));
 
             tasks.forEach(task => {
                 let taskItem = document.createElement("li");
                 taskItem.className = "flex justify-between items-center p-3 bg-gray-700 rounded draggable";
                 taskItem.draggable = true;
                 taskItem.innerHTML = `
-                    <span class="${task.completed ? 'line-through text-gray-400' : ''}">${task.text} - <small>${new Date(task.date).toLocaleString()}</small> (${task.category}, ${task.priority})</span>
+                    <span class="${task.completed ? 'line-through text-gray-400' : ''}">
+                        🕒 ${new Date(task.date).toLocaleTimeString()} - ${task.text}
+                        <small>(${task.category}, ${task.priority})</small>
+                    </span>
                     <div>
                         <button onclick="toggleTask(${task.id})" class="mr-2 text-green-400">✔</button>
                         <button onclick="deleteTask(${task.id})" class="text-red-400">🗑</button>
